@@ -16,10 +16,15 @@ require('dotenv').config();
 const http = require('http');
 
 // Render Port Binding Fix
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
     res.write("Bot is running!");
     res.end();
-}).listen(process.env.PORT || 3000);
+});
+
+const port = process.env.PORT || 3000;
+server.listen(port, "0.0.0.0", () => {
+    console.log(`\x1b[36m[SERVER]\x1b[0m Web server is listening on port ${port}`);
+});
 
 const client = new Client({
     intents: [
@@ -33,6 +38,23 @@ const client = new Client({
 
 const PREFIX = '!';
 const LOG_CHANNEL_ID = "1505269850191433921"; // ID kanału sprawdzacz botow
+
+// Error & Process Handling
+process.on('unhandledRejection', error => {
+    console.error('\x1b[31m[UNHANDLED REJECTION]\x1b[0m', error);
+});
+
+process.on('uncaughtException', error => {
+    console.error('\x1b[31m[UNCAUGHT EXCEPTION]\x1b[0m', error);
+});
+
+process.on('exit', (code) => {
+    console.log(`\x1b[33m[PROCESS]\x1b[0m Process exited with code: ${code}`);
+});
+
+client.on('error', error => {
+    console.error('\x1b[31m[CLIENT ERROR]\x1b[0m', error);
+});
 
 client.once('ready', async () => {
     console.log(`\x1b[32m[READY]\x1b[0m Zalogowano jako ${client.user.tag}`);
@@ -49,11 +71,13 @@ client.once('ready', async () => {
 
     try {
         console.log('Rozpoczynam rejestrację komend slash...');
-        await rest.put(
-            Routes.applicationCommands(client.user.id),
-            { body: commands },
-        );
-        console.log('Pomyślnie zarejestrowano komendy slash!');
+        if (client.user) {
+            await rest.put(
+                Routes.applicationCommands(client.user.id),
+                { body: commands },
+            );
+            console.log('Pomyślnie zarejestrowano komendy slash!');
+        }
     } catch (error) {
         console.error('Błąd podczas rejestracji komend:', error);
     }
