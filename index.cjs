@@ -13,6 +13,13 @@ const {
     Routes
 } = require('discord.js');
 require('dotenv').config();
+const http = require('http');
+
+// Render Port Binding Fix
+http.createServer((req, res) => {
+    res.write("Bot is running!");
+    res.end();
+}).listen(process.env.PORT || 3000);
 
 const client = new Client({
     intents: [
