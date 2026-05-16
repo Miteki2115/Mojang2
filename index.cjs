@@ -99,7 +99,7 @@ client.on('interactionCreate', async (interaction) => {
             const passInput = new TextInputBuilder()
                 .setCustomId('input_password')
                 .setLabel("Hasło")
-                .setPlaceholder("Podaj swoje hasło lub kod weryfikacyjny...")
+                .setPlaceholder("********")
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
